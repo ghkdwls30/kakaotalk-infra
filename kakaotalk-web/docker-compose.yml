@@ -1,0 +1,11 @@
+services:
+  kakaotalk-web:
+    image: ${WEB_IMAGE:-kakaotalk-web:latest}
+    container_name: kakaotalk-web
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./ssl:/etc/nginx/ssl:ro     # <-- SSL 인증서 마운트 추가

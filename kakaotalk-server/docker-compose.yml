@@ -1,0 +1,15 @@
+services:
+  kakaotalk-server:
+    image: ${SERVER_IMAGE:-kakaotalk-server:latest}
+    container_name: kakaotalk-server
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prd}
+      - JAVA_OPTS=${JAVA_OPTS:--Xms512m -Xmx1024m -Dh2.bindAddress=0.0.0.0}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs

@@ -1,0 +1,69 @@
+# ========================================================
+# Kakaotalk Automation Infrastructure (통합 실행 Compose)
+# ========================================================
+# - 통합 실행: docker compose up -d
+# - 개별 실행: cd kakaotalk-server && docker compose up -d
+# ========================================================
+
+services:
+  # ------------------------------------------------------
+  # 1. 백엔드 오케스트레이터 서버 (Spring Boot / 포트 8080)
+  # ------------------------------------------------------
+  kakaotalk-server:
+    image: ${SERVER_IMAGE:-kakaotalk-server:latest}
+    container_name: kakaotalk-server
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - ./kakaotalk-server/.env
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prd}
+      - JAVA_OPTS=${JAVA_OPTS:--Xms512m -Xmx1024m -Dh2.bindAddress=0.0.0.0}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./kakaotalk-server/data:/app/data
+      - ./kakaotalk-server/uploads:/app/uploads
+      - ./kakaotalk-server/logs:/app/logs
+
+  # ------------------------------------------------------
+  # 2. 웹 프론트엔드 대시보드 (React / Nginx 포트 80, 443 SSL)
+  # ------------------------------------------------------
+  kakaotalk-web:
+    image: ${WEB_IMAGE:-kakaotalk-web:latest}
+    container_name: kakaotalk-web
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - ./kakaotalk-web/.env
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./kakaotalk-web/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - kakaotalk-server
+
+  # ------------------------------------------------------
+  # 3. 단말 자동화 에이전트 (Python ADB 워커)
+  # ------------------------------------------------------
+  kakaotalk-agent:
+    image: ${AGENT_IMAGE:-kakaotalk-agent:latest}
+    container_name: kakaotalk-agent
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - ./kakaotalk-agent/.env
+    environment:
+      - TZ=Asia/Seoul
+      - SERVER_URL=${SERVER_URL:-ws://127.0.0.1:8080/ws/agent}
+      - SERVER_HEARTBEAT_INTERVAL=${SERVER_HEARTBEAT_INTERVAL:-10}
+      - SERVER_RECONNECT_INTERVAL=${SERVER_RECONNECT_INTERVAL:-2}
+      - REDROID_HOST=${REDROID_HOST:-127.0.0.1}
+      - REDROID_COUNT=${REDROID_COUNT:-40}
+      - REDROID_TARGETS=${REDROID_TARGETS:-}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./kakaotalk-agent/logs:/app/logs
+    depends_on:
+      - kakaotalk-server

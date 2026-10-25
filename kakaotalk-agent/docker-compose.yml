@@ -1,0 +1,19 @@
+services:
+  kakaotalk-agent:
+    image: ${AGENT_IMAGE:-kakaotalk-agent:latest}
+    container_name: kakaotalk-agent
+    restart: unless-stopped
+    # 호스트에 노출된 Redroid 포트(6001~6040 등)에 바로 직결
+    network_mode: host
+    environment:
+      # .env 파일에서 설정값을 읽어오며, 값이 없을 경우 기본값으로 폴백
+      - TZ=Asia/Seoul
+      - SERVER_URL=${SERVER_URL:-ws://127.0.0.1:8080/ws/agent}
+      - SERVER_HEARTBEAT_INTERVAL=${SERVER_HEARTBEAT_INTERVAL:-10}
+      - SERVER_RECONNECT_INTERVAL=${SERVER_RECONNECT_INTERVAL:-2}
+      - REDROID_HOST=${REDROID_HOST:-127.0.0.1}
+      - REDROID_COUNT=${REDROID_COUNT:-40}
+      - REDROID_TARGETS=${REDROID_TARGETS:-}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./logs:/app/logs
