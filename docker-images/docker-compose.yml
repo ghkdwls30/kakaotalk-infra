@@ -1,0 +1,51 @@
+services:
+  kakaotalk-server:
+    image: kakaotalk-server:latest
+    container_name: kakaotalk-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prd
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/kakaodb;DB_CLOSE_DELAY=-1
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_H2_CONSOLE_ENABLED=true
+      - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
+      - JAVA_OPTS=-Xms512m -Xmx1024m -Dh2.bindAddress=0.0.0.0
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./logs/server:/app/logs
+
+  kakaotalk-web:
+    image: kakaotalk-web:latest
+    container_name: kakaotalk-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - kakaotalk-server
+
+  kakaotalk-agent:
+    image: kakaotalk-agent:latest
+    container_name: kakaotalk-agent
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - SERVER_URL=ws://127.0.0.1:8080/ws/agent
+      - SERVER_HEARTBEAT_INTERVAL=10
+      - SERVER_RECONNECT_INTERVAL=2
+      - REDROID_HOST=127.0.0.1
+      - REDROID_COUNT=40
+      - REDROID_TARGETS=
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./logs/agent:/app/logs
+    depends_on:
+      - kakaotalk-server

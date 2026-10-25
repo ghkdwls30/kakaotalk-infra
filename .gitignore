@@ -1,0 +1,46 @@
+# ========================================================
+# Git Ignore - KakaoTalk Automation Infrastructure
+# ========================================================
+
+# 비밀 정보 및 토큰
+*token*
+*.key
+*.pem.secret
+
+# 도커 아카이브 (대용량 tar 파일 - GitHub 100MB 제한 초과)
+*.tar
+*.tar.gz
+*.iso
+
+# 런타임 데이터 및 데이터베이스
+data/
+docker-images/data/
+*.mv.db
+*.trace.db
+*.h2.db
+
+# 런타임 로그
+logs/
+docker-images/logs/
+*.log
+
+# 사용자 업로드 파일
+uploads/
+docker-images/uploads/
+
+# 로컬 개발 데이터 및 바이너리 툴킷
+kakaotalk-data/
+*.exe
+*.dll
+
+# OS 및 임시 파일
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+test_avatar.jpg
+
+# 에이전트 내부 세션 로그
+.gemini/
+.system_generated/
+scratch/
