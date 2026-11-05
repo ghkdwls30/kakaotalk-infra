@@ -45,9 +45,15 @@ kakaotalk-infra/
 │   ├── .env                    # 포트 및 JVM 옵션, 권한 설정
 │   └── jenkins_home/           # Jenkins 빌드 및 플러그인 영구 데이터
 │
-└── scripts/                    # Redroid 단말 배포 및 ADB 관리 스크립트
+└── scripts/                    # 인프라 설치 및 Redroid 단말 관리 스크립트
     ├── apks/                   # 카카오톡 및 필수 APK 파일
-    └── linux/                  # 커널 바인더, ws-scrcpy, redroid 런타임 제어 스크립트
+    └── linux/
+        ├── install_docker.sh   # [공통] 순수 Docker Engine & Compose 최신판 단독 설치
+        ├── 0_setup_native_system.sh # [Redroid] Binder 모듈, 시스템 최적화 & Docker 올인원 설치
+        ├── 1_build_ws_scrcpy.sh     # [Redroid] 웹 브라우저 60fps 뷰어 빌드
+        ├── 2_deploy_redroid.sh      # [Redroid] 인스턴스 일괄 배포 & 스케일링
+        ├── 3_install_kakaotalk_all.sh # [Redroid] 카톡 APK 일괄 설치
+        └── redroid_ctl.sh      # [Redroid] 일상 운영 제어기
 ```
 
 ---
