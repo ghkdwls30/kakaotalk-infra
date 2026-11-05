@@ -1,9 +1,6 @@
 services:
   jenkins:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ${JENKINS_IMAGE:-kakaotalk-jenkins:latest}
+    image: ${JENKINS_IMAGE:-jenkins/jenkins:lts-jdk17}
     container_name: jenkins
     restart: unless-stopped
     user: "${JENKINS_USER:-root}"
@@ -16,4 +13,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./jenkins_home:/var/jenkins_home
+      # [DooD] 호스트의 Docker 데몬 소켓 및 실행 명령어 직결 마운트 (별도 Dockerfile 빌드 불필요)
       - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins:ro
