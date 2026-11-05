@@ -3,18 +3,46 @@ services:
     image: ${POSTGRES_IMAGE:-postgres:16-alpine}
     container_name: postgres
     restart: unless-stopped
+    network_mode: host
+    shm_size: ${POSTGRES_SHM_SIZE:-2g}
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-kakaotalk}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres1234}
       - TZ=Asia/Seoul
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      # [1] SSD 최적화 (인덱스 탐색 성능 대폭 향상 - 가장 인기 있는 옵션)
+      - "-c"
+      - "random_page_cost=${PG_RANDOM_PAGE_COST:-1.1}"
+      - "-c"
+      - "effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY:-200}"
+      # [2] 메모리 캐시 및 버퍼 최적화 (64GB RAM 기준 고성능 튜닝)
+      - "-c"
+      - "shared_buffers=${PG_SHARED_BUFFERS:-4GB}"
+      - "-c"
+      - "effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-12GB}"
+      - "-c"
+      - "work_mem=${PG_WORK_MEM:-32MB}"
+      - "-c"
+      - "maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-512MB}"
+      # [3] WAL 및 디스크 I/O 스파이크 방지
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "max_wal_size=2GB"
+      - "-c"
+      - "min_wal_size=512MB"
+      # [4] 쿼리 병렬 처리
+      - "-c"
+      - "max_parallel_workers_per_gather=2"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kakaotalk}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kakaotalk}"]
       interval: 10s
       timeout: 5s
       retries: 5
