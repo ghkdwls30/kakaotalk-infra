@@ -15,6 +15,9 @@ services:
       - ./data:/var/lib/postgresql/data
     command:
       - "postgres"
+      # [0] 270대 대량 단말 동시 접속 수용 (기본 100 한계 극복)
+      - "-c"
+      - "max_connections=${PG_MAX_CONNECTIONS:-300}"
       # [1] SSD 최적화 (인덱스 탐색 성능 대폭 향상 - 가장 인기 있는 옵션)
       - "-c"
       - "random_page_cost=${PG_RANDOM_PAGE_COST:-1.1}"

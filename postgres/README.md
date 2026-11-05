@@ -48,6 +48,7 @@ docker compose down
 | 파라미터 | 기본값 | 64GB 최적화값 | 효과 |
 | :--- | :--- | :--- | :--- |
 | **`network_mode`** | bridge | **`host`** | Docker NAT 오버헤드 제거, 네트워크 지연 최소화 |
+| **`max_connections`** | 100 | **`300`** | 270대 단말 동시 쿼리 및 대량 동시성 완벽 수용 |
 | **`shm_size`** | 64MB | **`2GB`** | 병렬 쿼리 및 대량 조인 시 메모리 크래시 방지 |
 | **`shared_buffers`** | 128MB | **`4GB`** | DB 전용 데이터 캐시 메모리 대폭 확장 |
 | **`effective_cache_size`**| 4GB | **`12GB`** | OS 캐시를 고려한 효율적인 쿼리 플래닝 유도 |

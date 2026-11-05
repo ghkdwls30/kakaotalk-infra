@@ -1,6 +1,9 @@
 services:
   jenkins:
-    image: ${JENKINS_IMAGE:-jenkins/jenkins:lts-jdk17}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${JENKINS_IMAGE:-kakaotalk-jenkins:latest}
     container_name: jenkins
     restart: unless-stopped
     user: "${JENKINS_USER:-root}"
