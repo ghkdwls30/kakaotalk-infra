@@ -1,0 +1,14 @@
+services:
+  registry:
+    image: ${REGISTRY_IMAGE:-registry:2}
+    container_name: docker-registry
+    restart: unless-stopped
+    ports:
+      - "${REGISTRY_PORT:-5000}:5000"
+    environment:
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+      - REGISTRY_HTTP_ADDR=0.0.0.0:5000
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data:/var/lib/registry

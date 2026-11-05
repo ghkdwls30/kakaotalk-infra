@@ -16,6 +16,7 @@
 # 런타임 데이터 및 데이터베이스
 data/
 docker-images/data/
+jenkins_home/
 *.mv.db
 *.trace.db
 *.h2.db

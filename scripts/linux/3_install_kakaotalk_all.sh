@@ -56,11 +56,10 @@ for i in $(seq "$START_NUM" "$END_NUM"); do
     target="127.0.0.1:$port"
     echo -n "🚀 [기기 $i] $target 연결 및 설치 중... "
     
-    connect_out=$(adb connect "$target" 2>&1 || true)
+    adb connect "$target" >/dev/null 2>&1 || true
     
     # 1. 분할 패키지 일괄 설치
-    install_err=$(adb -s "$target" install-multiple -r "${APK_LIST[@]}" 2>&1)
-    if [ $? -eq 0 ]; then
+    if adb -s "$target" install-multiple -r "${APK_LIST[@]}" >/dev/null 2>&1; then
         # 2. 오로라 스토어 추가 설치 (존재 시)
         if [ -f "$AURORA_APK" ]; then
             adb -s "$target" install -r "$AURORA_APK" >/dev/null 2>&1 || true
@@ -69,8 +68,7 @@ for i in $(seq "$START_NUM" "$END_NUM"); do
         adb -s "$target" shell "am start -n com.kakao.talk/.activity.SplashActivity" >/dev/null 2>&1 || true
         echo "✅ [성공] 카카오톡 + 오로라 스토어 설치 완료 및 실행!"
     else
-        echo "❌ [실패]"
-        echo "      └─ 사유: $install_err"
+        echo "❌ [실패] 설치 에러 발생 (기기 부팅 상태를 확인하세요)"
     fi
 done
 

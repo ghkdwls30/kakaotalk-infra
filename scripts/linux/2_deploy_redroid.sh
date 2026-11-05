@@ -6,11 +6,7 @@
 #          - 최신 카카오톡 완벽 호환 (Android 13 / redroid:13.0.0-latest)
 #          - 최초 1회 생성된 기기 신분증(IMEI, MAC, Serial 등) 영구 보존으로 카카오톡 인증 풀림 방지
 #          - 3대 성능 최적화(ext4 볼륨, guest GPU, use_memfd) 및 가상 키보드 차단 적용
-# sh(dash)로 실행된 경우 자동으로 bash로 재실행
-if [ -z "${BASH_VERSION:-}" ]; then
-    exec bash "$0" "$@"
-fi
-
+# ==============================================================================
 set -euo pipefail
 
 if [ -z "${1:-}" ]; then
@@ -37,11 +33,18 @@ echo "=================================================================="
 echo "🚀 [순정 리눅스 2/3] Redroid 인스턴스 [총 ${TARGET_COUNT}대] 구동 및 최적화를 시작합니다."
 echo "=================================================================="
 
-# 1. Binderfs 활성화 상태 점검
+# 1. Binderfs 및 TUN 활성화 상태 점검
 if [ ! -e /dev/binderfs/binder ] && [ ! -e /dev/binder ]; then
     echo "⚙️ /dev/binderfs 마운트 확인 중..."
     sudo mkdir -p /dev/binderfs || true
     sudo mount -t binder binder /dev/binderfs || true
+fi
+
+if [ ! -e /dev/net/tun ]; then
+    echo "⚙️ /dev/net/tun 점검 및 생성 중..."
+    sudo mkdir -p /dev/net || true
+    sudo mknod /dev/net/tun c 10 200 || true
+    sudo chmod 666 /dev/net/tun || true
 fi
 
 # 2. [부팅 초기화] 가상 키보드 100% 완전 비활성화 init 스크립트 작성
@@ -208,6 +211,7 @@ for i in range(1, TARGET_COUNT + 1):
     lines.append(f"    volumes:")
     lines.append(f"      - ./data/data{num}:/data")
     lines.append(f"      - ./init-keyboard.rc:/vendor/etc/init/init-keyboard.rc:ro")
+    lines.append(f"      - /dev/net/tun:/dev/tun")
     lines.append(f"    command:")
     lines.append(f"      - androidboot.redroid_width=540")
     lines.append(f"      - androidboot.redroid_height=960")
@@ -229,6 +233,12 @@ for i in range(1, TARGET_COUNT + 1):
     lines.append(f'      - gsm.sim.operator.numeric={p["carrier_numeric"]}')
     lines.append(f'      - gsm.sim.operator.alpha={p["carrier_alpha"]}')
     lines.append(f"    restart: always")
+    lines.append("    cap_add:")
+    lines.append("      - NET_ADMIN")
+    lines.append("      - NET_RAW")
+    lines.append("      - MKNOD")
+    lines.append("    sysctls:")
+    lines.append("      - net.ipv6.conf.all.disable_ipv6=0")
     lines.append("    ulimits:")
     lines.append("      nofile:")
     lines.append("        soft: 1048576")
