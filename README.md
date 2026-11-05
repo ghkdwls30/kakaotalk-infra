@@ -1,6 +1,6 @@
-# KakaoTalk Automation Infrastructure (`kakaotalk-infra`)
+# KakaoTalk Shared Infrastructure (`kakaotalk-infra`)
 
-카카오톡 자동화 시스템의 배포, 컨테이너 오케스트레이션 및 인프라 운영 레포지토리입니다.
+카카오톡 자동화 시스템의 공통 기반 인프라(DB, CI/CD, Registry) 및 호스트 최적화 환경 구축 레포지토리입니다.
 
 ---
 
@@ -8,44 +8,27 @@
 
 ```text
 kakaotalk-infra/
-├── docker-compose.yml          # 앱 서비스 통합 실행 compose (Server, Web, Agent)
-├── start_all.sh                # 전체 서비스 통합 기동 스크립트 (옵션: --pull)
-├── stop_all.sh                 # 전체 서비스 중지 스크립트
-├── restart_all.sh              # 전체 서비스 재기동 스크립트
+├── docker-compose.yml          # 공통 인프라 통합 실행 compose (Postgres, Registry, Jenkins)
+├── start_all.sh                # 전체 인프라 통합 기동 스크립트
+├── stop_all.sh                 # 전체 인프라 중지 스크립트
+├── restart_all.sh              # 전체 인프라 재기동 스크립트
 │
-├── kakaotalk-server/           # [백엔드] Spring Boot (포트 8080)
-│   ├── docker-compose.yml      # 단독 실행 compose
-│   ├── .env                    # 서버 환경변수 (포트, JVM 옵션, 프로파일 등)
-│   ├── data/                   # H2/MySQL 영구 데이터베이스 볼륨
-│   ├── uploads/                # 첨부파일/이미지 영구 볼륨
-│   └── logs/                   # 애플리케이션 로그
+├── postgres/                   # [데이터베이스] PostgreSQL 16 (호스트 모드, 64GB 튜닝)
+│   ├── docker-compose.yml      # DB 단독 실행 compose
+│   ├── .env                    # DB 관리자 계정(admin/zeus890!), 270대 트래픽 튜닝
+│   └── data/                   # DB 영구 데이터 볼륨 (자동 생성, .gitignore 등록)
 │
-├── kakaotalk-web/              # [프론트엔드] React / Nginx (포트 80, 443 SSL)
-│   ├── docker-compose.yml      # 단독 실행 compose
-│   ├── .env                    # 웹 환경변수
-│   └── ssl/                    # HTTPS SSL 인증서 (fullchain.pem, privkey.pem)
-│
-├── kakaotalk-agent/            # [에이전트] Python ADB 자동화 워커
-│   ├── docker-compose.yml      # 단독 실행 compose
-│   ├── .env                    # WS 서버 주소, Redroid 타깃 IP/대수 설정
-│   └── logs/                   # 에이전트 실행 및 실패 저널 로그
-│
-├── postgres/                   # [데이터베이스] PostgreSQL 16 (포트 5432)
-│   ├── docker-compose.yml      # DB 실행 compose
-│   ├── .env                    # DB 접속 계정, 암호, 포트 설정
-│   └── data/                   # PostgreSQL 영구 데이터 볼륨
-│
-├── docker-registry/            # [사설 레지스트리] Docker Registry (포트 5000)
-│   ├── docker-compose.yml      # Registry 단독 실행 compose
+├── docker-registry/            # [사설 레지스트리] Docker Registry 2 (포트 5000)
+│   ├── docker-compose.yml      # 레지스트리 단독 실행 compose
 │   ├── .env                    # 레지스트리 포트 설정
-│   └── data/                   # 레지스트리 이미지 영구 저장 볼륨
+│   └── data/                   # 이미지 영구 저장 볼륨
 │
 ├── jenkins/                    # [CI/CD] Jenkins LTS (포트 9090, 50000)
-│   ├── docker-compose.yml      # Jenkins 컨테이너 compose (Docker 소켓 연동)
+│   ├── docker-compose.yml      # Jenkins 컨테이너 compose (호스트 Docker 직결 마운트)
 │   ├── .env                    # 포트 및 JVM 옵션, 권한 설정
-│   └── jenkins_home/           # Jenkins 빌드 및 플러그인 영구 데이터
+│   └── jenkins_home/           # Jenkins 빌드 작업, 설정 영구 데이터
 │
-└── scripts/                    # 인프라 설치 및 Redroid 단말 관리 스크립트
+└── scripts/                    # 호스트 시스템 설치 및 Redroid 단말 관리 스크립트
     ├── apks/                   # 카카오톡 및 필수 APK 파일
     └── linux/
         ├── install_docker.sh   # [공통] 순수 Docker Engine & Compose 최신판 단독 설치
@@ -58,31 +41,28 @@ kakaotalk-infra/
 
 ---
 
-## 🚀 실행 가이드
+## 🚀 인프라 실행 가이드
 
-### 1. 애플리케이션 통합 실행 (Server, Web, Agent)
+### 1. 인프라 전체 통합 실행 (DB + Registry + Jenkins 한 번에)
 
 ```bash
-# 전체 서비스 한 번에 기동
+# 전체 인프라 기동
 ./start_all.sh
-# 또는 최신 도커 이미지 pull 후 기동
-./start_all.sh --pull
-
-# 또는 도커 컴포즈 직접 실행
+# 또는 직접 실행
 docker compose up -d
 
 # 상태 확인
 docker compose ps
 
 # 전체 중지
-docker compose down
+./stop_all.sh
 ```
 
 ---
 
-### 2. 인프라 및 개별 컴포넌트 실행
+### 2. 개별 인프라 독립 실행
 
-각 디렉터리로 이동하여 독립적으로 기동/중지할 수 있습니다.
+각 디렉터리로 이동하여 필요한 인프라만 독립적으로 기동/중지할 수 있습니다.
 
 #### ① PostgreSQL 데이터베이스 (`postgres`)
 ```bash
@@ -103,38 +83,12 @@ docker compose logs -f
 cd jenkins
 docker compose up -d
 docker compose logs -f
-# 브라우저 접속: http://localhost:9090
-```
-
-#### ④ 백엔드 서버 (`kakaotalk-server`)
-```bash
-cd kakaotalk-server
-docker compose up -d
-docker compose logs -f
-```
-
-#### ⑤ 웹 대시보드 (`kakaotalk-web`)
-```bash
-cd kakaotalk-web
-docker compose up -d
-docker compose logs -f
-```
-
-#### ⑥ 단말 제어 에이전트 (`kakaotalk-agent`)
-```bash
-cd kakaotalk-agent
-docker compose up -d
-docker compose logs -f
 ```
 
 ---
 
 ## ⚙️ 네트워크 및 포트 안내
 
-- **PostgreSQL**: `5432` (PostgreSQL Database)
+- **PostgreSQL**: `localhost:5432` (`network_mode: host`, `admin` / `zeus890!`)
 - **Docker Registry**: `5000` (Registry API / Push / Pull)
-- **Jenkins**: `9090` (Web 대시보드) / `50000` (JNLP 빌드 에이전트)
-- **Server**: `8080` (REST API & `/ws/agent` WebSocket)
-- **Web**: `80` (HTTP), `443` (HTTPS SSL)
-- **Agent**: `host` 모드 동작 (호스트의 Redroid 포트 `6001~6040` 직결)
-- **ws-scrcpy**: `8000` (Redroid 실시간 웹 스트리밍 뷰어)
+- **Jenkins**: `9090` (Web UI 대시보드) / `50000` (JNLP 빌드 에이전트)
