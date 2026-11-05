@@ -6,9 +6,9 @@ services:
     network_mode: host
     shm_size: ${POSTGRES_SHM_SIZE:-2g}
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-kakaotalk}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres1234}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER:-admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-zeus890!}
       - TZ=Asia/Seoul
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -42,7 +42,7 @@ services:
       - "-c"
       - "max_parallel_workers_per_gather=2"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kakaotalk}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
