@@ -305,6 +305,22 @@ for i in $(seq 1 "$TARGET_COUNT"); do
     adb connect "127.0.0.1:$port" >/dev/null 2>&1 || true
 done
 
+# 8. ws-scrcpy 웹 뷰어 재기동 및 ADB 세션 동기화 (블랙아웃 방지)
+echo "🔄 ws-scrcpy 웹 스트리머 재시작 및 디바이스 세션 동기화 중..."
+docker restart ws-scrcpy >/dev/null 2>&1 || true
+sleep 2
+
+echo "📱 1~${TARGET_COUNT}번 가상 단말 화면 깨우기 및 ws-scrcpy 연결 중..."
+for i in $(seq 1 "$TARGET_COUNT"); do
+    port=$((6000 + i))
+    cname=$(printf "redroid-%02d" "$i")
+    # 화면 켜기 및 잠금 해제 (블랙아웃 방지)
+    docker exec "$cname" input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+    docker exec "$cname" input keyevent 82 >/dev/null 2>&1 || true
+    # ws-scrcpy 내부 ADB 연결
+    docker exec ws-scrcpy adb connect "127.0.0.1:$port" >/dev/null 2>&1 || true
+done
+
 echo ""
 echo "=================================================================="
 echo "🎉 [순정 리눅스 2/3] Redroid [총 ${TARGET_COUNT}대] 정상 기동 완료!"
