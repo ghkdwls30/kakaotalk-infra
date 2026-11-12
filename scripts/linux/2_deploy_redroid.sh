@@ -6,6 +6,7 @@
 #          - 최신 카카오톡 완벽 호환 (Android 13 / redroid:13.0.0-latest)
 #          - 최초 1회 생성된 기기 신분증(IMEI, MAC, Serial 등) 영구 보존으로 카카오톡 인증 풀림 방지
 #          - 3대 성능 최적화(ext4 볼륨, guest GPU, use_memfd) 및 가상 키보드 차단 적용
+#          - LMKD 메모리 킬러 방어 최적화 (카카오톡 프로세스 강제 종료 및 스래싱 킬 차단)
 # ==============================================================================
 set -euo pipefail
 
@@ -61,6 +62,8 @@ on property:sys.boot_completed=1
     exec_background - root root -- /system/bin/settings put system sound_effects_enabled 0
     exec_background - root root -- /system/bin/settings put system haptic_feedback_enabled 0
     exec_background - root root -- /system/bin/settings put secure spell_checker_enabled 0
+    exec_background - root root -- /system/bin/settings put global auto_time_zone 0
+    exec_background - root root -- /system/bin/setprop persist.sys.timezone Asia/Seoul
     exec_background - root root -- /system/bin/dumpsys deviceidle disable
     exec_background - root root -- /system/bin/pm disable-user --user 0 com.android.inputmethod.latin
     exec_background - root root -- /system/bin/pm disable-user --user 0 com.google.android.inputmethod.latin
@@ -218,9 +221,14 @@ for i in range(1, TARGET_COUNT + 1):
     lines.append(f"      - androidboot.redroid_dpi=220")
     lines.append(f"      - androidboot.redroid_gpu_mode=guest")
     lines.append(f"      - androidboot.use_memfd=1")
+    lines.append(f"      - ro.lmk.kill_heaviest_task=false")
+    lines.append(f"      - ro.lmk.thrashing_limit=0")
+    lines.append(f"      - ro.lmk.swap_util_max=100")
+    lines.append(f"      - ro.lmk.swap_free_low_percentage=0")
     lines.append(f"      - ro.product.locale=ko-KR")
     lines.append(f"      - ro.product.locale.language=ko")
     lines.append(f"      - ro.product.locale.region=KR")
+    lines.append(f"      - persist.sys.timezone=Asia/Seoul")
     lines.append(f'      - ro.product.model={p["model"]}')
     lines.append(f"      - ro.product.brand=samsung")
     lines.append(f"      - ro.product.manufacturer=samsung")
@@ -292,10 +300,13 @@ for i in range(1, TARGET_COUNT + 1):
     ]
     try:
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        # 한국 표준시(KST / Asia/Seoul) 및 자동 시간대 설정
+        subprocess.run(["docker", "exec", cname, "setprop", "persist.sys.timezone", "Asia/Seoul"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        subprocess.run(["docker", "exec", cname, "settings", "put", "global", "auto_time_zone", "0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
     except Exception:
         pass
 
-print("✅ 기기별 고유 Android ID 잠금 적용 완료!")
+print("✅ 기기별 고유 Android ID 잠금 및 한국 표준시(KST) 설정 완료!")
 PYEOF
 
 # 7. 호스트 리눅스 ADB 일괄 자동 연결
