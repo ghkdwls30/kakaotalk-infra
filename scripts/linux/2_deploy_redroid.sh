@@ -65,6 +65,12 @@ on property:sys.boot_completed=1
     exec_background - root root -- /system/bin/settings put global auto_time_zone 0
     exec_background - root root -- /system/bin/setprop persist.sys.timezone Asia/Seoul
     exec_background - root root -- /system/bin/dumpsys deviceidle disable
+    # 배터리 정상 상태 가상화 (고정 100% 회피, 85% 잔량, 31.2도 정상 체온, 방전 중)
+    exec_background - root root -- /system/bin/dumpsys battery set ac 0
+    exec_background - root root -- /system/bin/dumpsys battery set level 85
+    exec_background - root root -- /system/bin/dumpsys battery set temp 312
+    exec_background - root root -- /system/bin/dumpsys battery set voltage 3950
+    exec_background - root root -- /system/bin/dumpsys battery set status 3
     exec_background - root root -- /system/bin/pm disable-user --user 0 com.android.inputmethod.latin
     exec_background - root root -- /system/bin/pm disable-user --user 0 com.google.android.inputmethod.latin
     exec_background - root root -- /system/bin/pm disable-user --user 0 io.github.visnkmr.nokeyboard
@@ -240,6 +246,19 @@ for i in range(1, TARGET_COUNT + 1):
     lines.append(f'      - androidboot.redroid_mac={p["mac"]}')
     lines.append(f'      - gsm.sim.operator.numeric={p["carrier_numeric"]}')
     lines.append(f'      - gsm.sim.operator.alpha={p["carrier_alpha"]}')
+    # [순정 폰 빌드 위장] user / release-keys / secure (Anti-Emulator/보안 솔루션 탐지 차단)
+    lines.append(f"      - ro.build.type=user")
+    lines.append(f"      - ro.build.tags=release-keys")
+    lines.append(f"      - ro.debuggable=0")
+    lines.append(f"      - ro.secure=1")
+    lines.append(f'      - ro.build.flavor={p["device"]}ks-user')
+    # [정품 USIM 위장] 통신망 정상 개통 및 USIM 장착 상태 (SIM_STATE_READY)
+    lines.append(f"      - gsm.sim.state=5")
+    lines.append(f"      - gsm.operator.isroaming=false")
+    lines.append(f"      - gsm.network.type=LTE")
+    lines.append(f"      - gsm.sim.operator.iso-country=kr")
+    # [그래픽 호환성] OpenGL ES 3.0 명시 (GPU 없는 CPU guest 렌더링 호환)
+    lines.append(f"      - ro.opengles.version=196608")
     lines.append(f"    restart: always")
     lines.append("    cap_add:")
     lines.append("      - NET_ADMIN")
@@ -303,6 +322,11 @@ for i in range(1, TARGET_COUNT + 1):
         # 한국 표준시(KST / Asia/Seoul) 및 자동 시간대 설정
         subprocess.run(["docker", "exec", cname, "setprop", "persist.sys.timezone", "Asia/Seoul"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
         subprocess.run(["docker", "exec", cname, "settings", "put", "global", "auto_time_zone", "0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        # 배터리 정상 상태 확정 주입 (고정 100% 탐지 차단)
+        subprocess.run(["docker", "exec", cname, "dumpsys", "battery", "set", "ac", "0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        subprocess.run(["docker", "exec", cname, "dumpsys", "battery", "set", "level", "85"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        subprocess.run(["docker", "exec", cname, "dumpsys", "battery", "set", "temp", "312"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        subprocess.run(["docker", "exec", cname, "dumpsys", "battery", "set", "status", "3"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
     except Exception:
         pass
 
